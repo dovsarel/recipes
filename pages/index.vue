@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h1 class="text-xl text-center">מתכונים</h1>
+    <h1 class="text-xl text-center">מתכונים!</h1>
 
     <UForm
       :state="filter"

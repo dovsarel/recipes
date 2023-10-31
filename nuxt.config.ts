@@ -9,7 +9,7 @@ export default defineNuxtConfig({
   ],
   runtimeConfig: {
     public: {
-      googleSheetsId: '1b-FEDXioYI81GsRpE4HPyF5EC5R2pChdPdESp-SqRXM',
+      googleSheetsId: '1FxAn1aH9KcQ9Kvk2MpucO-Z0ZLawqj1gCF57hC7D2ns',
       googleSheetsGid: '0',
     },
   },

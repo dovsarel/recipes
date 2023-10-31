@@ -1,5 +1,5 @@
 {
-  "name": "nuxt-app",
+  "name": "recipes",
   "private": true,
   "type": "module",
   "scripts": {

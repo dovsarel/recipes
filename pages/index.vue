@@ -5,14 +5,58 @@
     <UForm
       :state="filter"
       @submit.prevent
-      class="flex gap-5 justify-center my-5"
+      class="md:flex gap-5 justify-center my-5 px-5 "
     >
-      <UFormGroup label="חיפוש" name="q">
+      <UFormGroup label="חיפוש" name="q" class="grow">
         <UInput v-model="filter.q" autofocus />
       </UFormGroup>
 
-      <UFormGroup label="בשרי/חלבי/פרווה" name="meaty_or_dairy">
-        <USelectMenu v-model="filter.meaty_or_dairy" :options="meaty_or_dairy" multiple placeholder="נא לבחור" />
+      <UFormGroup label="סוג" name="type" class="grow">
+        <USelectMenu
+          v-model="filter.type"
+          :options="typeOptions"
+          multiple
+        >
+          <template #label>
+            <span v-if="filter.type.length" class="truncate">{{ filter.type.join(', ') }}</span>
+            <span v-else>נא לבחור</span>
+          </template>
+        </USelectMenu>
+      </UFormGroup>
+
+      <UFormGroup label="בשרי/חלבי/פרווה" name="meaty_or_dairy" class="grow">
+        <USelectMenu
+          v-model="filter.meaty_or_dairy"
+          :options="meaty_or_dairy"
+          multiple
+        >
+          <template #label>
+            <span v-if="filter.meaty_or_dairy.length" class="truncate">{{ filter.meaty_or_dairy.join(', ') }}</span>
+            <span v-else>נא לבחור</span>
+          </template>
+        </USelectMenu>
+      </UFormGroup>
+
+      <UFormGroup label="מרכיבים מיוחדים" name="ingredients_partial" class="grow">
+        <USelectMenu
+          v-model="filter.ingredients_partial"
+          :options="ingredientsPartialOptions"
+          multiple
+          searchable
+          searchable-placeholder="חיפוש..."
+        >
+          <template #label>
+            <template v-if="filter.ingredients_partial.length" class="truncate">
+              <UBadge
+                v-for="item in filter.ingredients_partial"
+                color="primary"
+                variant="outline"
+                @click="filter.ingredients_partial = filter.ingredients_partial.filter(v => v !== item)"
+              >{{ item }}</UBadge>
+            </template>
+            <span v-else>נא לבחור</span>
+          </template>
+        </USelectMenu>
       </UFormGroup>
     </UForm>
 
@@ -35,7 +79,7 @@
       <template #empty-state>
         <div class="flex flex-col items-center justify-center py-6 gap-3">
           <span class="italic text-sm">לא נמצאו מתכונים מתאימים</span>
-          <UButton label="איפוס חיפוש" @click="refreshPage" />
+          <UButton label="איפוס חיפוש" @click="filter = defaultFilter" />
         </div>
       </template>
     </UTable>
@@ -72,21 +116,63 @@
     { key: 'ingredients_partial', label: 'מרכיבים מיוחדים', keyInDb: KEYS_IN_DB.ingredients_partial },
   ];
 
-  const filter = ref({
+  const defaultFilter = {
     q: '',
+    type: [],
     meaty_or_dairy: [],
+    ingredients_partial: [],
+  };
+
+  const filter = ref(structuredClone(defaultFilter));
+
+  const typeOptions = computed(() => {
+    let arr = recipes.items.map(r => r[KEYS_IN_DB.type]);
+
+    arr = [...new Set(arr)];
+
+    if (arr.length > 0) {
+      arr = arr.toSorted();
+    }
+
+    return arr;
+  });
+
+  const splitIngredientsPartial = (str: string) => str.split(',').map(v => v.trim()).filter(v => v !== '');
+
+  const ingredientsPartialOptions = computed(() => {
+    let arr = (recipes.items.map(r => splitIngredientsPartial(r[KEYS_IN_DB.ingredients_partial]))).flat();
+
+    arr = arr.map(v => v.trim())
+      .filter(v => v !== '');
+
+    arr = [...new Set(arr)];
+
+    if (arr.length > 0) {
+      arr = arr.toSorted();
+    }
+
+    return arr;
   });
 
   const items = computed(() => {
     let arr = recipes.items;
 
-
     if (![0, meaty_or_dairy.length].includes(filter.value.meaty_or_dairy.length)) {
       arr = arr.filter((item) => filter.value.meaty_or_dairy.includes(item[KEYS_IN_DB.meaty_or_dairy]));
     }
 
+    if (![0].includes(filter.value.type.length)) {
+      arr = arr.filter((item) => filter.value.type.includes(item[KEYS_IN_DB.type]));
+    }
+
     if (filter.value.q.trim() !== '') {
-      arr = arr.filter((item) => item[KEYS_IN_DB.name].includes(filter.value.q.trim()));
+      arr = arr.filter((item) => item[KEYS_IN_DB.name].includes(filter.value.q.trim()) || item[KEYS_IN_DB.ingredients_partial].includes(filter.value.q.trim()));
+    }
+
+    if (![0].includes(filter.value.ingredients_partial.length)) {
+      filter.value.ingredients_partial.forEach(element => {
+        arr = arr.filter((item) => splitIngredientsPartial(item[KEYS_IN_DB.ingredients_partial]).includes(element));
+      });
     }
 
     arr = arr.map((item) => {
@@ -127,7 +213,5 @@
 
     return `${Math.floor(minute / 60)}:${String(minute % 60).padStart(2, '0')} ש'`;
   };
-
-  const refreshPage = () => window.location.reload();
 
 </script>
